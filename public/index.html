@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width">
+  <title>aoh</title>
+  <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+
+<div id="app">
+  <!-- <h1>aoh</h1> -->
+  <div>{{message}}</div>
+
+  <main-nav :list="nav"></main-nav>
+
+  <router-view></router-view>
+
+  <ol>
+    <!-- Create an instance of the todo-item component -->
+    <!-- <todo-item v-for="(item, key) in trails" v-bind:item="item" :key="key"></todo-item> -->
+  </ol>
+</div>
+
+<script type="text/x-template" id="template-home-page">
+  <div>Hello world!</div>
+</script>
+
+<script type="text/x-template" id="template-main-nav">
+  <nav>
+    <ul>
+      <li v-for="item in list" :key="item.id">
+        <router-link :to="item.path">{{ item.name }}</router-link>
+      </li>
+    </ul>
+  </nav>
+</script>
+
+<script type="text/x-template" id="template-cat-nav">
+  <nav>
+    <ul>
+      <li v-for="item in list" :key="item.id">
+        <router-link :to="path + '/' + item.id">{{ item.name }}</router-link>
+      </li>
+    </ul>
+  </nav>
+</script>
+
+<script type="text/x-template" id="template-section">
+  <div>
+    <home-page v-if="section=='index'"></home-page>
+    <router-view></router-view>
+    <cat-nav :list="list" :path="path"></cat-nav>
+  </div>
+</script>
+
+<script type="text/x-template" id="template-details">
+  <div>
+    <div v-if="item">{{ item.name }}</div>
+  </div>
+</script>
+
+<script type="text/x-template" id="template-trails-details">
+  <div v-if="item">
+    <div>{{ item.name }}</div>
+    <ul>
+      <li v-for="house in item.children" :key="house.id">
+        <router-link :to="'/houses/' + house.id">{{ house.number }} {{ house.name }}</router-link>
+      </li>
+    </ul>
+  </div>
+</script>
+
+<script src="/vendor/vue.js"></script>
+<script src="/vendor/vue-router.js"></script>
+<script src="/vendor/jquery.min.js"></script>
+<script src="/js/main.js"></script>
+</body>
+</html>

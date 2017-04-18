@@ -9,26 +9,37 @@ module.exports = utils;
 
 
 /**
+ * @param {string} src - Url to parse
+ * @returns {string} name of the page
+ */
+utils.getPagenameFromUrl = (src) => {
+  const urlObject = url.parse(src);
+  let pageName = urlObject.hostname;
+  let pathname = urlObject.pathname.replace(/^[\/]+|[\/]+$/g, '');
+
+  if (pathname) {
+    pageName = pathname.split('/').pop();
+  }
+
+  return pageName;
+};
+
+
+/**
  * Download and save web page
  * @param {string} src - Url of the page to download
  * @param {string} dest - Folder path where to save the file
  * @returns {promise} string with the name of the file
  */
-utils.downloadPage = (src, dest) => {
+utils.downloadPage = (src, dest, name) => {
   return new Promise((resolve, reject) => {
     const ext = '.html';
     const options = {
       method: 'GET',
       url: src
     };
-    // const urlObject = url.parse(src);
-    // let fileName = urlObject.pathname.split('/').pop();
 
-    // if (!fileName) {
-    //   fileName = urlObject.hostname;
-    // }
-
-    const fileName = src.replace(/\//g, '_') + ext;
+    const fileName = (name || utils.getPagenameFromUrl(src)) + ext;
 
     request(options, (err, response) => {
       if (err) {
@@ -41,7 +52,7 @@ utils.downloadPage = (src, dest) => {
       if (response.statusCode !== 200) {
         return reject({
           url: src,
-          error: response.statusCode
+          error: new Error(response.statusCode)
         });
       }
 
@@ -92,6 +103,29 @@ utils.downloadPages = (urls, dest) => {
 };
 
 
+utils.delayedDownloadPage = (src, dest, name) => {
+  return new Promise((resolve) => {
+    setTimeout(() => {
+      resolve(utils.downloadPage(src, dest, name));
+    }, 500);
+  });
+};
+
+
+utils.waterfallPromises = (arr, dest, run) => {
+  const promises = arr.reduce((acc, currentValue) => {
+    return acc.then((res) => {
+      return run(currentValue, dest).then((result) => {
+        res.push(result);
+        return res;
+      });
+    });
+  }, Promise.resolve([]));
+
+  return promises;
+};
+
+
 /**
  * Read file
  * @param {string} dest - Path of the file
@@ -105,6 +139,6 @@ utils.readFile = (dest) => {
       }
 
       resolve(content);
-    })
+    });
   });
 };
