@@ -107,312 +107,288 @@ const decodeEmail = (input) => {
 };
 
 
-const getHouse = (html) => {
-  const $ = cheerio.load(html);
+const getId = ($) => {
+  const href = $('link[rel=canonical]').attr('href');
 
-  const getId = () => {
-    const href = $('link[rel=canonical]').attr('href');
+  return utils.getPagenameFromUrl(href);
+};
 
-    return utils.getPagenameFromUrl(href);
-  };
+const getName = ($) => {
+  const title = $('.entry-title');
+  const link = title.find('a');
+  let result = '';
 
-  const getName = () => {
-    const title = $('.entry-title');
-    const link = title.find('a');
-    let result = '';
+  if (link.length) {
+    const cfemail = link.data('cfemail');
+    result = decodeEmail(cfemail);
+  }
+  else {
+   result = title.text().trim();
+  }
 
-    if (link.length) {
-      const cfemail = link.data('cfemail');
-      result = decodeEmail(cfemail);
-    }
-    else {
-     result = title.text().trim();
-    }
+  return result;
+};
 
-    return result;
-  };
+const getAddress = ($) => {
+  let address = [];
+  let county = '';
+  let city = '';
+  let postcode = '';
 
-  const getAddress = () => {
-    let address = [];
-    let county = '';
-    let city = '';
-    let postcode = '';
+  const html = $('.col.house_address p').html();
 
-    const html = $('.col.house_address p').html();
+  if (html) {
+    let arr = html.split('\r\n');
 
-    if (html) {
-      let arr = html.split('\r\n');
-
-      if (arr.length === 1) {
-        arr = arr[0].split(',');
-      }
-
-      arr.forEach((item, index) => {
-        arr[index] = item.trim().replace(/,$/, '');
-      });
-
-      const last = arr.pop();
-
-      const matchedPostcode = last.match(regexSearch)[0];
-      const matchedCity = last.replace(matchedPostcode, '');
-
-      // postcode
-      postcode = matchedPostcode.toUpperCase();
-
-      if (!regexProper.test(postcode)) {
-        postcode = postcode.replace(/\s/g, '');
-        postcode = postcode.substr(0, postcode.length - 3) + ' ' + postcode.substr(-3);
-      }
-
-      // city
-      city = matchedCity.trim();
-      city = city.replace(/\.$/g, '');
-
-      if (allowedCounties.indexOf(city) !== -1) {
-        county = city;
-        city = '';
-      }
-
-      if (city !== '' && allowedCities.indexOf(city) === -1) {
-        address.unshift(city);
-        city = '';
-      }
-
-      // address
-      arr.reverse();
-
-      arr.reduce((acc, currentValue) => {
-        if (allowedCities.indexOf(currentValue) !== -1) {
-          city = currentValue;
-        }
-        else if (allowedCounties.indexOf(currentValue) !== -1) {
-          county = currentValue;
-        }
-        else {
-          address.unshift(currentValue);
-        }
-      }, '');
-
-      if (city === '') {
-        if (/^BN[1|2]/.test(postcode)) {
-          city = 'Brighton';
-        }
-
-        if (/^BN3/.test(postcode)) {
-          city = 'Hove';
-        }
-      }
+    if (arr.length === 1) {
+      arr = arr[0].split(',');
     }
 
-    return {
-      address,
-      city,
-      postcode,
-      county
-    };
-  };
-
-  const getDirections = () => {
-    const html = $('.directions').html();
-    let result = html || '';
-
-    result = result.trim();
-    result = result.replace('<strong>Directions: </strong> ', '');
-
-    if (result === '') {
-      result = [];
-    }
-    else {
-      result = result.split('\r\n');
-    }
-
-    result.forEach((item, index) => {
-      result[index] = item.trim();
+    arr.forEach((item, index) => {
+      arr[index] = item.trim().replace(/,$/, '');
     });
 
-    // TODO check and remove tags
+    const last = arr.pop();
 
-    return result;
+    const matchedPostcode = last.match(regexSearch)[0];
+    const matchedCity = last.replace(matchedPostcode, '');
+
+    // postcode
+    postcode = matchedPostcode.toUpperCase();
+
+    if (!regexProper.test(postcode)) {
+      postcode = postcode.replace(/\s/g, '');
+      postcode = postcode.substr(0, postcode.length - 3) + ' ' + postcode.substr(-3);
+    }
+
+    // city
+    city = matchedCity.trim();
+    city = city.replace(/\.$/g, '');
+
+    if (allowedCounties.indexOf(city) !== -1) {
+      county = city;
+      city = '';
+    }
+
+    if (city !== '' && allowedCities.indexOf(city) === -1) {
+      address.unshift(city);
+      city = '';
+    }
+
+    // address
+    arr.reverse();
+
+    arr.reduce((acc, currentValue) => {
+      if (allowedCities.indexOf(currentValue) !== -1) {
+        city = currentValue;
+      }
+      else if (allowedCounties.indexOf(currentValue) !== -1) {
+        county = currentValue;
+      }
+      else {
+        address.unshift(currentValue);
+      }
+    }, '');
+
+    if (city === '') {
+      if (/^BN[1|2]/.test(postcode)) {
+        city = 'Brighton';
+      }
+
+      if (/^BN3/.test(postcode)) {
+        city = 'Hove';
+      }
+    }
+  }
+
+  return {
+    address,
+    city,
+    postcode,
+    county
   };
+};
 
-  const getTrail = () => {
-    const html = $('.trail_button a').text();
-    let result = html.trim() || '';
+const getDirections = ($) => {
+  const html = $('.directions').html();
+  let result = html || '';
 
-    return result;
-  };
+  result = result.trim();
+  result = result.replace('<strong>Directions: </strong> ', '');
 
-  const getDescription = () => {
-    const html = $('#listing_content').html();
-    let result = html.trim() || '';
+  if (result === '') {
+    result = [];
+  }
+  else {
+    result = result.split('\r\n');
+  }
 
-    result = result.replace(/<\/p>\n<p>/g, '</p>===<p>');
-    result = result.split('===');
+  result.forEach((item, index) => {
+    result[index] = item.trim();
+  });
 
-    return result;
-  };
+  // TODO check and remove tags
 
-  const getArtists = () => {
-    let result = [];
-    // TODO
+  return result;
+};
 
-    return result;
-  };
+const getTrail = ($) => {
+  const html = $('.trail_button a').text();
+  let result = html.trim() || '';
 
-  const getFacilities = () => {
-    const html = $('#facilities').find('li');
-    let result = [];
+  return result;
+};
 
-    html.each((index, el) => {
-      const $el = $(el);
-      const name = $el.text().trim();
-      let id = $el.find('img').attr('src');
-      id = id.substr(0, id.lastIndexOf('.'));
-      id = utils.getPagenameFromUrl(id);
+const getDescription = ($) => {
+  const html = $('#listing_content').html();
+  let result = html.trim() || '';
 
+  result = result.replace(/<\/p>\n<p>/g, '</p>===<p>');
+  result = result.split('===');
+
+  return result;
+};
+
+const getArtists = () => {
+  let result = [];
+  // TODO
+
+  return result;
+};
+
+const getFacilities = ($) => {
+  const html = $('#facilities').find('li');
+  let result = [];
+
+  html.each((index, el) => {
+    const $el = $(el);
+    const name = $el.text().trim();
+    let id = $el.find('img').attr('src');
+    id = id.substr(0, id.lastIndexOf('.'));
+    id = utils.getPagenameFromUrl(id);
+
+    const o = {
+      id: id,
+      name: name
+    };
+
+    result.push(o);
+  });
+
+  return result;
+};
+
+const getDates = ($) => {
+  const html = $('#opening-cal').find('td.active');
+  let result = [];
+
+  html.each((index, el) => {
+    const $el = $(el);
+    const day = $el.text();
+
+    // TODO: create full date
+
+    result.push(day);
+  });
+
+  return result;
+};
+
+const getHours = ($) => {
+  const html = $('.opening_hours').text();
+  let result = html.trim() || '';
+
+  result = result.replace('oo', '00');
+
+  // const regex1 = new RegExp(/^(0{0,1}\d{2})[\.:](\d{2})\s{0,1}[-–]\s{0,1}(\d{2})[\.:](\d{2})$/);
+
+  // if (regex1.test(result)) {
+  //   result = '';
+  // }
+
+  return result;
+};
+
+const getContacts = ($) => {
+  const html = $('.contact-details div');
+  let result = [];
+  const regex = new RegExp(/^[\d\+\s]{1,}/);
+
+  html.each((index, el) => {
+    const $el = $(el);
+    let type = '';
+    let href = '';
+    let name = '';
+    
+    let $a = $el.find('.__cf_email__');
+    let $b = $el.find('a');
+
+    if ($a.length) {
+      type = 'email';
+      const cfemail = $a.data('cfemail');
+      const email = decodeEmail(cfemail);
+      href = email;
+      name = email;
+    }
+    else if ($b.length) {
+      type = 'link';
+      href = $b.attr('href');
+      name = $b.text().trim();
+    }
+    else {
+      type = 'text';
+      name = $el.text().trim();
+
+      if (regex.test(name)) {
+        type = 'tel';
+        href = name.match(regex)[0].trim().replace(/\s/g, '');
+      }
+    }
+
+    if (name !== '') {
       const o = {
-        id: id,
-        name: name
+        type,
+        href,
+        name
       };
 
       result.push(o);
-    });
+    }
+  });
 
-    return result;
-  };
-
-  const getDates = () => {
-    const html = $('#opening-cal').find('td.active');
-    let result = [];
-
-    html.each((index, el) => {
-      const $el = $(el);
-      const day = $el.text();
-
-      // TODO: create full date
-
-      result.push(day);
-    });
-
-    return result;
-  };
-
-  const getHours = () => {
-    const html = $('.opening_hours').text();
-    let result = html.trim() || '';
-
-    result = result.replace('oo', '00');
-
-    // const regex1 = new RegExp(/^(0{0,1}\d{2})[\.:](\d{2})\s{0,1}[-–]\s{0,1}(\d{2})[\.:](\d{2})$/);
-
-    // if (regex1.test(result)) {
-    //   result = '';
-    // }
-
-    return result;
-  };
-
-  const getContacts = () => {
-    const html = $('.contact-details div');
-    let result = [];
-    const regex = new RegExp(/^[\d\+\s]{1,}/);
-
-    html.each((index, el) => {
-      const $el = $(el);
-      let type = '';
-      let href = '';
-      let name = '';
-      
-      let $a = $el.find('.__cf_email__');
-      let $b = $el.find('a');
-
-      if ($a.length) {
-        type = 'email';
-        const cfemail = $a.data('cfemail');
-        const email = decodeEmail(cfemail);
-        href = email;
-        name = email;
-      }
-      else if ($b.length) {
-        type = 'link';
-        href = $b.attr('href');
-        name = $b.text().trim();
-      }
-      else {
-        type = 'text';
-        name = $el.text().trim();
-
-        if (regex.test(name)) {
-          type = 'tel';
-          href = name.match(regex)[0].trim().replace(/\s/g, '');
-        }
-      }
-
-      if (name !== '') {
-        const o = {
-          type,
-          href,
-          name
-        };
-
-        result.push(o);
-      }
-    });
-
-    return result;
-  };
-
-  // TODO: additional hours
-  // TODO: additional days
-
-  return {
-    getId,
-    getName,
-    getAddress,
-    getDirections,
-    getTrail,
-    getDescription,
-    getArtists,
-    getFacilities,
-    getDates,
-    getHours,
-    getContacts
-  };
+  return result;
 };
 
 
 const getFullInfo = (options) => {
-  let result = {
-    houses: {},
-    trails: {}
-  };
-
-
   const htmlHousesIndex = fs.readFileSync(path.join(options.dirIndex, options.housesIndex));
 
-  result.houses = getList(htmlHousesIndex);
-  result.trails = getTrailsList(htmlHousesIndex);
+  let houses = getList(htmlHousesIndex);
+  const trails = getTrailsList(htmlHousesIndex);
 
   const fullHousesDir = path.join(options.dirIndex, options.housesDir);
 
   fs.readdirSync(fullHousesDir).forEach((item) => {
     const html = fs.readFileSync(path.join(fullHousesDir, item));
-    const house = getHouse(html);
+    const $ = cheerio.load(html);
 
-    const id = house.getId();
+    const id = getId($);
 
-    result.houses[id].address = house.getAddress();
-    result.houses[id].direction = house.getDirections();
-    result.houses[id].trail = house.getTrail();
-    result.houses[id].description = house.getDescription();
-    result.houses[id].artists = house.getArtists();
-    result.houses[id].facilities = house.getFacilities();
-    result.houses[id].dates = house.getDates();
-    result.houses[id].hours = house.getHours();
-    result.houses[id].contacts = house.getContacts();
+    houses[id].address = getAddress($);
+    houses[id].direction = getDirections($);
+    houses[id].trail = getTrail($);
+    houses[id].description = getDescription($);
+    houses[id].artists = getArtists($);
+    houses[id].facilities = getFacilities($);
+    houses[id].dates = getDates($);
+    houses[id].hours = getHours($);
+    houses[id].contacts = getContacts($);
   });
 
-  return result;
+  return {
+    houses,
+    trails
+  };
 };
 
 

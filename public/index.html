@@ -9,67 +9,185 @@
 <body>
 
 <div id="app">
-  <!-- <h1>aoh</h1> -->
-  <div>{{message}}</div>
-
-  <main-nav :list="nav"></main-nav>
+  <header>
+    <nav>
+      <ul>
+        <li><router-link :to="'/'">Home</router-link></li>
+        <li><router-link :to="'/houses'">Houses</router-link></li>
+        <li><router-link :to="'/artists'">Artists</router-link></li>
+      </ul>
+    </nav>
+  </header>
 
   <router-view></router-view>
 
-  <ol>
-    <!-- Create an instance of the todo-item component -->
-    <!-- <todo-item v-for="(item, key) in trails" v-bind:item="item" :key="key"></todo-item> -->
-  </ol>
+  <footer>Footer</footer>
 </div>
 
-<script type="text/x-template" id="template-home-page">
-  <div>Hello world!</div>
+
+
+<script type="text/x-template" id="template-trails-nav">
+  <cat-nav :list="list" :path="path"></cat-nav>
 </script>
 
-<script type="text/x-template" id="template-main-nav">
-  <nav>
-    <ul>
-      <li v-for="item in list" :key="item.id">
-        <router-link :to="item.path">{{ item.name }}</router-link>
-      </li>
-    </ul>
-  </nav>
+
+<script type="text/x-template" id="template-artforms-nav">
+  <cat-nav :list="list" :path="path"></cat-nav>
 </script>
+
 
 <script type="text/x-template" id="template-cat-nav">
   <nav>
     <ul>
-      <li v-for="item in list" :key="item.id">
+      <li>
+        <router-link :to="path">All</router-link>
+      </li>
+      <li v-for="item in list">
         <router-link :to="path + '/' + item.id">{{ item.name }}</router-link>
       </li>
     </ul>
   </nav>
 </script>
 
-<script type="text/x-template" id="template-section">
-  <div>
-    <home-page v-if="section=='index'"></home-page>
-    <router-view></router-view>
-    <cat-nav :list="list" :path="path"></cat-nav>
-  </div>
-</script>
 
-<script type="text/x-template" id="template-details">
+<script type="text/x-template" id="template-list-houses">
   <div>
-    <div v-if="item">{{ item.name }}</div>
-  </div>
-</script>
-
-<script type="text/x-template" id="template-trails-details">
-  <div v-if="item">
-    <div>{{ item.name }}</div>
-    <ul>
-      <li v-for="house in item.children" :key="house.id">
-        <router-link :to="'/houses/' + house.id">{{ house.number }} {{ house.name }}</router-link>
+    <ol>
+      <li v-for="item in list">
+        <router-link :to="'/houses/' + item.id"><span v-bind:class="item.trail.id">{{ item.trailNumber }}</span> {{ item.name }}</router-link>
       </li>
-    </ul>
+    </ol>
   </div>
 </script>
+
+
+<script type="text/x-template" id="template-list-artists">
+  <div>
+    <ol>
+      <li v-for="item in list">
+        <router-link :to="'/artists/' + item.id">{{ item.name }}</router-link>
+      </li>
+    </ol>
+  </div>
+</script>
+
+
+<script type="text/x-template" id="template-section-index">
+  <div>Home page</div>
+</script>
+
+
+<script type="text/x-template" id="template-section-houses">
+  <div>
+    Houses
+    <trails-nav></trails-nav>
+    <list-houses :list="list"></list-houses>
+  </div>
+</script>
+
+
+<script type="text/x-template" id="template-section-house-details">
+  <div>
+    House details
+    <div v-if="item" v-bind:class="'trail_' + item.trail.id" class="house">
+      <div v-if="prev">
+        <router-link :to="'/houses/' + prev.id"><span>{{ prev.trailNumber }}</span> {{ prev.name }}</router-link>
+      </div>
+      <div v-if="next">
+        <router-link :to="'/houses/' + next.id"><span>{{ next.trailNumber }}</span> {{ next.name }}</router-link>
+      </div>
+
+      <h1>{{ item.name }}</h1>
+
+      <router-link :to="'/trails/' + item.trail.id"><span>{{ item.trailNumber }}</span> {{ item.trail.name }}</router-link>
+
+      <div v-if="item.address">
+        <div v-if="item.address.address.length" v-for="address in item.address.address">{{ address }}</div>
+        <div v-if="item.address.city">{{ item.address.city }}</div>
+        <div v-if="item.address.postcode">{{ item.address.postcode }}</div>
+        <div v-if="item.address.county">{{ item.address.county }}</div>
+      </div>
+
+      <div v-if="item.direction.length">
+        <p v-for="p in item.direction">{{ p }}</p>
+      </div>
+
+      <div v-if="item.description.length">
+        <p v-for="p in item.description">{{ p }}</p>
+      </div>
+
+      <ul v-if="item.artists.length">
+        <li v-for="artist in item.artists">{{ artist }}</li>
+      </ul>
+
+      <ul v-if="item.facilities.length">
+        <li v-for="facility in item.facilities">{{ facility.id }} {{ facility.name }}</li>
+      </ul>
+
+      <ul v-if="item.dates.length">
+        <li v-for="date in item.dates">{{ date }}</li>
+      </ul>
+
+      <div v-if="item.hours">{{ item.hours }}</div>
+
+      <ul v-if="item.contacts.length">
+        <li v-for="contact in item.contacts">
+          <template v-if="contact.type === 'tel'">
+            <a v-bind:href="'tel:' + contact.href">{{ contact.name }}</a>
+          </template>
+          <template v-else-if="contact.type === 'email'">
+            <a v-bind:href="'mailto:' + contact.href">{{ contact.name }}</a>
+          </template>
+          <template v-else-if="contact.type === 'link'">
+            <a v-bind:href="contact.href" target="_blank">{{ contact.name }}</a>
+          </template>
+        </li>
+      </ul>
+    </div>
+  </div>
+</script>
+
+
+<script type="text/x-template" id="template-section-trail-details">
+  <div>
+    Trail details
+    <trails-nav></trails-nav>
+    <list-houses :list="list"></list-houses>
+  </div>
+</script>
+
+
+<script type="text/x-template" id="template-section-artists">
+  <div>
+    Artists
+    <artforms-nav></artforms-nav>
+    <list-artists :list="list"></list-artists>
+  </div>
+</script>
+
+
+<script type="text/x-template" id="template-section-artist-details">
+  <div>
+    Artist details
+  </div>
+</script>
+
+
+<script type="text/x-template" id="template-section-artform-details">
+  <div>
+    Artform details
+    <artforms-nav></artforms-nav>
+    <list-artists :list="list"></list-artists>
+  </div>
+</script>
+
+
+<script type="text/x-template" id="template-section-404">
+  <div>
+    404
+  </div>
+</script>
+
 
 <script src="/vendor/vue.js"></script>
 <script src="/vendor/vue-router.js"></script>

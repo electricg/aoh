@@ -1,3 +1,24 @@
 .router-link-active {
   color: red;
 }
+
+.trail_beyond_the_level      { --c-brand: #0066CC; }
+.trail_brunswick_town        { --c-brand: #9999FF; }
+.trail_central               { --c-brand: #669966; }
+.trail_coastal               { --c-brand: #CCCCCC; }
+.trail_ditchling             { --c-brand: #CC9900; }
+.trail_dyke_road             { --c-brand: #66CCCC; }
+.trail_fiveways              { --c-brand: #999933; }
+.trail_hanover               { --c-brand: #CC3333; }
+.trail_hassocks              { --c-brand: #CCCCCC; }
+.trail_hove                  { --c-brand: #FF9933; }
+.trail_independent           { --c-brand: #993333; }
+.trail_kemptown              { --c-brand: #CCCC33; }
+.trail_newhaven_and_ouse     { --c-brand: #CC6600; }
+.trail_rottingdean_and_downs { --c-brand: #99CCFF; }
+.trail_seven_dials           { --c-brand: #663366; }
+.trail_west_hove             { --c-brand: #CC6699; }
+
+.house h1 {
+  background: var(--c-brand);
+}

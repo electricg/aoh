@@ -1,0 +1,29 @@
+## Pages
+
+all the pages: main nav, footer
+
+* `/` - home page with some intro text
+* `/houses` - menu with all the trails (link to `/trails/:id`) plus a "all" item (link to `/houses`), list of all the houses
+* `/houses/:id` - details of the house and a link to its trailer
+* `/trails` - redirect to /houses
+* `/trails/:id` - list of all the houses of the selected trail
+* `/artists` - menu with all the artforms (link to `/artforms/:id`) plus a "all" item (link to `/artists`), list of all the artists
+* `/artists/:id` - details of the artist and a link to its house
+* `/artforms` - redirect to /artists
+* `/artforms/:id` - list of all the artists of the selected artform
+* `/404` - error page
+* `/*` - redirect to 404 page
+
+
+## Components
+
+* main nav: home - trails - artists
+* list (with links) of the houses with the applied filter
+* list (with links) of the artists with the applied filter
+* cat nav: trails
+* cat nav: artforms
+* detail of the house, with links to the trail and artists
+* detail of the artist, with link to the house
+* 404 section
+* home page section
+* footer

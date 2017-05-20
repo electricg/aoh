@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width">
+  <title>Vue</title>
+  <style>
+.router-link-active {
+  color: red;
+}
+
+  </style>
+</head>
+<body>
+
+<div id="app">
+  <h1>Star Wars</h1>
+  <p>
+    <!-- use router-link component for navigation. -->
+    <!-- specify the link by passing the `to` prop. -->
+    <!-- <router-link> will be rendered as an `<a>` tag by default -->
+    <!-- <router-link to="/vuejs/foo">Go to Foo</router-link> -->
+  </p>
+  <!-- route outlet -->
+  <!-- component matched by the route will render here -->
+  <section-menu></section-menu>
+  <router-view></router-view>
+</div>
+
+<script src="/vendor/vue.js"></script>
+<script src="/vendor/vue-router.js"></script>
+<script src="/vendor/jquery.min.js"></script>
+<script>
+/* global Vue, VueRouter, $ */
+const baseUrl = '/vuejs';
+// 0. If using a module system, call Vue.use(VueRouter)
+
+// 1. Define route components.
+// These can be imported from other files
+Vue.component('section-menu', {
+  template:
+    '<div>\
+      <h2>Sections</h2>\
+      <ul>\
+        <li v-for="item in list">\
+          <router-link :to="\'/vuejs/section/\' + item">{{ item }}</router-link>\
+        </li>\
+      </ul>\
+    </div>',
+  data: function() {
+    return {
+      sections: this.$parent._data.sections,
+      list: null,
+      loading: false,
+      error: null
+    };
+  },
+  created: function() {
+    // fetch the data when the view is created and the data is
+    // already being observed
+    this.fetchData();
+  },
+  watch: {
+    // call again the method if the route changes
+    // '$route': 'fetchData'
+  },
+  methods: {
+    fetchData () {
+      this.error = this.list = null;
+      this.loading = true;
+      $.ajax({
+        url: 'http://swapi.co/api/',
+        success: (data) => {
+          this.loading = false;
+          Object.keys(data).forEach(item => {
+            if (this.sections[item] == null) {
+              Vue.set(this.sections, item, {});
+            }
+            Vue.set(this.sections[item], 'url', data[item]);
+            Vue.set(this.sections[item], 'items', {});
+          });
+          this.list = Object.keys(data).sort();
+        }
+      });
+    }
+  }
+});
+
+const Section = {
+  template:
+    '<div>\
+      <h3>{{ name }}</h3>\
+      <ul>\
+        <li v-for="(item, index) in list">\
+          <router-link :to="\'/vuejs/section/\' + name + \'/\' + (index + 1)">{{ item.name }}</router-link>\
+        </li>\
+      </ul>\
+      <router-view></router-view>\
+    </div>',
+  data: function() {
+    return {
+      sections: this.$parent._data.sections,
+      loading: false,
+      name: null,
+      list: null,
+      error: null
+    };
+  },
+  created: function() {
+    // fetch the data when the view is created and the data is
+    // already being observed
+    this.fetchData();
+  },
+  watch: {
+    // call again the method if the route changes
+    // '$route': 'fetchData'
+    '$route': function(newPath, oldPath) {
+      if (newPath.params.section !== oldPath.params.section) {
+        this.fetchData();
+      }
+    }
+  },
+  methods: {
+    fetchData () {
+      this.error = this.list = null;
+      this.loading = true;
+      this.name = this.$route.params.section;
+      $.ajax({
+        url: 'http://swapi.co/api/' + this.name,
+        success: (data) => {
+          this.loading = false;
+          this.list = data.results.map(function(res) {
+            return {
+              name: res.name || res.title
+            };
+          });
+          if (this.sections[this.name] == null) {
+            // Vue.set(this.sections, this.name, {});
+          }
+          // Vue.set(this.sections[this.name], 'items', data.results);
+          data.results.forEach((item, index) => {
+            Vue.set(this.sections[this.name].items, index + 1, item);
+          });
+        }
+      });
+    }
+  }
+};
+
+const Info = {
+  // props: ['sections'],
+  template:
+    '<div>\
+      <h4>{{ title }}</h4>\
+      <dl>\
+        <template v-for="(value, key) in item">\
+          <dt>{{ key }}</dt>\
+            <dd>{{ value }}</dd>\
+        </template>\
+      </dl>\
+    </div>',
+  data: function() {
+    return {
+      sections: this.$parent._data.sections,
+      item: null,
+      title: null,
+    };
+  },
+  created: function() {
+    this.fetchData();
+  },
+  watch: {
+    '$route': 'fetchData',
+    // 'section.items': 'fetchData'
+  },
+  methods: {
+    fetchData () {
+      var section = this.$route.params.section;
+      var id = this.$route.params.id;
+      if (this.sections[section] && this.sections[section].items) {
+        this.item = this.sections[section].items[id];
+        this.title = this.item.name || this.item.title;
+      }
+      // this.item = this.sections[section] ? this.sections[section].items ? this.sections[section].items[id - 1] : {} : {};
+      // console.log(this.item);
+    }
+  }
+};
+
+// 2. Define some routes
+// Each route should map to a component. The "component" can
+// either be an actual component constructor created via
+// Vue.extend(), or just a component options object.
+// We'll talk about nested routes later.
+const routes = [
+  // { path: baseUrl + '/', component: Home },
+  { path: baseUrl + '/section/:section', component: Section,
+    children: [
+      {
+        path: ':id',
+        component: Info
+      }
+    ]
+  }
+];
+
+// 3. Create the router instance and pass the `routes` option
+// You can pass in additional options here, but let's
+// keep it simple for now.
+const router = new VueRouter({
+  mode: 'history',
+  routes
+});
+
+// 4. Create and mount the root instance.
+// Make sure to inject the router with the router option to make the
+// whole app router-aware.
+const app = new Vue({
+  data: {
+    sections: {}
+  },
+  router
+}).$mount('#app');
+
+// Now the app has started!
+</script>
+  
+</body>
+</html>
